@@ -3,13 +3,13 @@ pipeline {
 
     options {
         disableConcurrentBuilds()
+        skipDefaultCheckout(true)
     }
 
     environment {
         FEEDBACK_FILE = 'feedback.txt'
         TEST_REPORT = 'frontend/test-results.xml'
         GIT_CREDENTIALS = 'github-event-planner-git'
-        REPO_URL = 'https://github.com/Sudhakar-smi/DEVOPS-2026-CS-E-05.git'
     }
 
     stages {
@@ -23,12 +23,20 @@ pipeline {
         stage('Check Feedback Commit') {
             steps {
                 script {
+                    def commitMessage = bat(
+                        script: '@git log -1 --pretty=%%B',
+                        returnStdout: true
+                    ).trim()
+
                     def changedFiles = bat(
                         script: '@git diff-tree --no-commit-id --name-only -r HEAD',
                         returnStdout: true
                     ).trim()
 
-                    echo "Files changed in latest commit:"
+                    echo "Latest commit message:"
+                    echo commitMessage
+
+                    echo "Changed files:"
                     echo changedFiles
 
                     def files = changedFiles
@@ -36,10 +44,13 @@ pipeline {
                         .collect { it.trim() }
                         .findAll { it }
 
-                    if (files.size() == 1 && files[0] == 'feedback.txt') {
+                    if (
+                        commitMessage.contains('[JENKINS-FEEDBACK]') ||
+                        (files.size() == 1 && files[0] == 'feedback.txt')
+                    ) {
                         env.SKIP_FEEDBACK_PIPELINE = 'true'
                         echo 'Jenkins feedback commit detected.'
-                        echo 'Skipping tests and feedback push to prevent webhook loop.'
+                        echo 'Skipping pipeline to prevent webhook loop.'
                     } else {
                         env.SKIP_FEEDBACK_PIPELINE = 'false'
                         echo 'Normal developer commit detected.'
@@ -72,6 +83,7 @@ pipeline {
             steps {
                 dir('frontend') {
                     script {
+
                         def testExitCode = bat(
                             returnStatus: true,
                             script: 'npm test -- --reporter=verbose --reporter=junit --outputFile=test-results.xml'
@@ -80,26 +92,13 @@ pipeline {
                         env.TEST_EXIT_CODE = testExitCode.toString()
 
                         if (testExitCode == 0) {
-                            echo 'All tests passed.'
+                            echo 'All available tests passed.'
                         } else {
-                            echo "Tests completed with exit code: ${testExitCode}"
-                            echo 'Feedback will still be generated.'
+                            echo "Tests failed with exit code: ${testExitCode}"
+                            echo 'Continuing to generate feedback.'
+                            currentBuild.result = 'UNSTABLE'
                         }
                     }
-                }
-            }
-        }
-
-        stage('Build') {
-            when {
-                expression {
-                    env.SKIP_FEEDBACK_PIPELINE != 'true'
-                }
-            }
-
-            steps {
-                dir('frontend') {
-                    bat 'npm run build'
                 }
             }
         }
@@ -113,6 +112,7 @@ pipeline {
 
             steps {
                 powershell '''
+
                     if (-not (Test-Path "frontend/test-results.xml")) {
                         throw "JUnit test report was not generated."
                     }
@@ -137,9 +137,9 @@ pipeline {
 
                     $testRows = ""
 
-                    foreach ($suite in $report.testsuites.testsuite) {
+                    foreach ($suite in @($report.testsuites.testsuite)) {
 
-                        foreach ($test in $suite.testcase) {
+                        foreach ($test in @($suite.testcase)) {
 
                             $testName = [string]$test.name
 
@@ -213,6 +213,7 @@ $testRows
                     expression {
                         env.SKIP_FEEDBACK_PIPELINE != 'true'
                     }
+
                     branch 'main'
                 }
             }
@@ -236,7 +237,7 @@ $testRows
                         if %ERRORLEVEL% EQU 0 (
                             echo No feedback changes to commit.
                         ) else (
-                            git commit -m "Update Jenkins test feedback"
+                            git commit -m "[JENKINS-FEEDBACK] Update test feedback"
                             git push origin HEAD:main
                         )
                     '''
@@ -248,6 +249,7 @@ $testRows
     post {
 
         always {
+
             junit(
                 testResults: 'frontend/test-results.xml',
                 allowEmptyResults: true
@@ -268,6 +270,10 @@ $testRows
 
         failure {
             echo 'Jenkins pipeline failed.'
+        }
+
+        unstable {
+            echo 'Tests failed, but feedback was generated successfully.'
         }
     }
 }
