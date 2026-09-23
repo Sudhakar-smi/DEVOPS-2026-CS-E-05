@@ -97,3 +97,36 @@ Login/Register Form Validation > handles backend registration failure and displa
 
 ========================================
 
+========================================
+AI Event Planner - Jenkins Test Feedback
+========================================
+
+Build Number : 34
+Job Name     : Event-Planner/main
+Branch       : main
+Commit       : 
+Date         : 2026-09-23 08:32:32
+
+TEST SUMMARY
+----------------------------------------
+Total Tests  : 9
+Passed       : 9
+Failed       : 0
+Skipped      : 0
+Errors       : 0
+Overall      : PASS
+
+TEST CASE RESULTS
+----------------------------------------
+Authentication Pages > renders the Login page with all required headings, inputs, demo buttons, and navigation links : PASS
+Authentication Pages > renders the Register page with headings, role selector, form inputs, and navigation links : PASS
+Login/Register Form Validation > validates empty/missing fields on Login and shows toast error : PASS
+Login/Register Form Validation > handles backend authentication failure on Login with invalid credentials : PASS
+Login/Register Form Validation > handles successful Login submission with valid credentials and sets token : PASS
+Login/Register Form Validation > validates required fields on Register and shows toast error : PASS
+Login/Register Form Validation > enforces password length validation (minimum 6 characters) on Register : PASS
+Login/Register Form Validation > handles successful Register submission with valid credentials and sets token : PASS
+Login/Register Form Validation > handles backend registration failure and displays error toast : PASS
+
+========================================
+
