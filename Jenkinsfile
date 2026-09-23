@@ -83,7 +83,6 @@ pipeline {
             steps {
                 dir('frontend') {
                     script {
-
                         def testExitCode = bat(
                             returnStatus: true,
                             script: 'npm test -- --reporter=verbose --reporter=junit --outputFile=test-results.xml'
@@ -213,7 +212,6 @@ $testRows
                     expression {
                         env.SKIP_FEEDBACK_PIPELINE != 'true'
                     }
-
                     branch 'main'
                 }
             }
@@ -249,7 +247,6 @@ $testRows
     post {
 
         always {
-
             junit(
                 testResults: 'frontend/test-results.xml',
                 allowEmptyResults: true
