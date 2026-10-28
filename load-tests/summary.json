@@ -1,0 +1,8 @@
+{
+  "concurrent_users": 250,
+  "duration": "60 seconds",
+  "total_requests": 15000,
+  "failed_request_rate": 1,
+  "average_response_time_ms": 6.253500713333344,
+  "p95_response_time_ms": 20.795424999999984
+}
