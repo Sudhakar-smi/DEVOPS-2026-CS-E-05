@@ -1,0 +1,55 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: event-planner-backend
+  namespace: event-planner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: event-planner-backend
+  template:
+    metadata:
+      labels:
+        app: event-planner-backend
+    spec:
+      containers:
+        - name: backend
+          image: sudhakar2505/event-planner-backend:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+          env:
+            - name: PORT
+              value: "5000"
+            - name: NODE_ENV
+              value: "production"
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: event-planner-backend-secret
+                  key: MONGODB_URI
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: event-planner-backend-secret
+                  key: JWT_SECRET
+            - name: JWT_EXPIRE
+              valueFrom:
+                secretKeyRef:
+                  name: event-planner-backend-secret
+                  key: JWT_EXPIRE
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: event-planner-backend
+  namespace: event-planner
+spec:
+  selector:
+    app: event-planner-backend
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
+  type: ClusterIP
